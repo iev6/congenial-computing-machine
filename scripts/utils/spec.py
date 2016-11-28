@@ -11,6 +11,8 @@ import librosa.feature
 import glob
 import glob2
 import shutil
+import cPickle
+import re
 
 def path_info(audio_path):
     (dir_name,file_name) = os.path.split(audio_path)
@@ -61,9 +63,23 @@ for speaker in speakers.keys():
     for sound in sounds:
         gram = specgram(sound);
 #datasets created
-#we will move these into a separate directory called ../datasets/train_set
+#we will move these into a separate directory called ../datasets/train_set/speaker_name
 train_set = glob2.glob(path_to_timit+"**/*.png")
 for fil in train_set:
-    destn = '../../datasets/train_set'
+    f_name,speaker_name = path_info(fil)
+    destn = '../../datasets/train_set/'+speaker_name+'/'
     shutil.copy2(src=fil,dst=destn)
 #making a pickle out of all these pictures in ../datasets/train_set
+train_set = glob2.glob('../../datasets/train_set/*.png')
+train = np.zeros((1,128*100+1))
+p1 = re.compile("([a-z0-9A-Z]+)_([a-z0-9A-Z]+)_(?:[0-9]).png")
+for image in train_set:
+    (file_name,temp) = path_info(image)
+    m1 = p1.match(string=file_name)
+    (speaker_name,temp) = m1.groups(0)
+    img = scipy.misc.imread(name=image,flatten=True)
+    img = np.reshape(a=img,newshape=(1,-1))
+    spkr = speakers[speaker_name]
+    img = np.append(img,spkr)
+    train = np.vstack((train,img)
+train  = train[1:,:]
