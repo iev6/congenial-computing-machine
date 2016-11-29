@@ -3,7 +3,7 @@ Implementation of a CNN based Speaker Identification framework using keras
 
 Dataset Used : TIMIT
 
-@Author : Giridhur S. <giridhursriram@gmail.com>
+@Author : Giridhur S. <giridhursriram@gmail.com>, Ramasubramanian B. <brama1995@gmail.com>
 
 ''''
 
