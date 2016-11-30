@@ -1,7 +1,7 @@
 '''
 Spectrogram of wav files in TIMIT dataset
 
-@author : Giridhur S
+@author : Giridhur S, Ramasubramanian B
 '''
 import os
 import wave as wav
