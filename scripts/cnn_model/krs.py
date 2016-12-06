@@ -20,22 +20,29 @@ from keras import backend as K
 from keras.layers.advanced_activations import LeakyReLU
 from keras.optimizers import Nadam
 from sklearn.cross_validation import train_test_split
+from keras.utils.io_utils import HDF5Matrix
 #We will be building on the MNIST example
 
-with open('train_data.pkl','rb') as f1:
-    train = pkl.load(f1)
+#with open('train_data.pkl','rb') as f1:
+#    train = pkl.load(f1)
 
 
 
 batch_size = 32
-nb_classes = 38 #numerically equal to len(speaker.keys())
+nb_classes = np.max(label)+1 #numerically equal to len(speaker.keys())
 nb_epoch = 50
 
 # input image dimensions
 img_rows, img_cols = 256, 100
 
-train_label = np_utils.to_categorical(train[:,-1]-1,nb_classes=nb_classes,dtype=np.int32) #HACK : nb_classes hardcoded!!!
-train = train[:,:-1]
+train = HDF5Matrix('train_data.h5','imgs');
+label = HDF5Matrix('train_data.h5','lbls');
+#train = train[:,:-1]
+batch_size = 32
+nb_classes = np.max(label)+1 #numerically equal to len(speaker.keys())
+nb_epoch = 50
+
+train_label = np_utils.to_categorical(label,nb_classes=np.int32(nb_classes)) #HACK : nb_classes hardcoded!!!
 train = train - np.mean(train,axis=0)
 (trX,teX,trY,teY) = train_test_split(train,train_label,test_size=0.2)
 trX = trX.reshape(trX.shape[0],img_rows,img_cols,1)
@@ -54,12 +61,12 @@ input_shape = (img_rows, img_cols, 1)
 model = Sequential()
 #L1
 model.add(Convolution2D(nb_filters1, kernel_size[0], kernel_size[1],subsample=stride,border_mode='valid',
-                        input_shape=input_shape))
+                        input_shape=input_shape,init='glorot_normal'))
 model.add(Activation('relu'))
 #L2
 model.add(MaxPooling2D(pool_size=pool_size))
 #L3
-model.add(Convolution2D(nb_filters2,kernel_size[0], kernel_size[1],subsample=stride))
+model.add(Convolution2D(nb_filters2,kernel_size[0], kernel_size[1],subsample=stride,init='glorot_normal'))
 model.add(Activation('relu'))
 #L4
 model.add(MaxPooling2D(pool_size=pool_size))
@@ -67,21 +74,21 @@ model.add(MaxPooling2D(pool_size=pool_size))
 #L5
 #model.add(Dropout(0.5))
 model.add(Flatten())
-model.add(Dense(n_s*10))
+model.add(Dense(n_s*10,init='glorot_normal'))
 model.add(Activation('relu'))
 
 #L6
 model.add(Dropout(0.5))
 
 #L7
-model.add(Dense(5*n_s))
+model.add(Dense(5*n_s,init='glorot_normal'))
 model.add(Activation('relu'))
 
 #L8
 model.add(Dense(n_s))
 model.add(Activation('softmax'))
 #Optimizer
-optim = Nadam(lr=1e-4, beta_1=0.9, beta_2=0.999, epsilon=1e-06, schedule_decay=0.0001)
+optim = Nadam(lr=1e-3, beta_1=0.9, beta_2=0.999, epsilon=1e-06, schedule_decay=0.0001)
 model.compile(loss='categorical_crossentropy',optimizer=optim,metrics=['accuracy'])
 
 #Training

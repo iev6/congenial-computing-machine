@@ -151,6 +151,7 @@ for i in xrange(len(train_set)):
 train  = train[1:,:]
 images = train[:,:-1];
 labels = train[:,-1];
+
 with open('../cnn_model/train_data.pkl','wb') as f1:
     pkl.dump(train,f1)
 shutil.rmtree('../../datasets/train_set'); #clearing the residues
@@ -159,3 +160,4 @@ os.system('mkdir ../../datasets/train_set')
 with h5py.File('../cnn_model/train.h5','w') as f1:
     dset_img = f1.create_dataset("imgs",data=images)
     dset_lbl = f1.create_dataset("lbls",data=labels)
+#h5py cant SHUFFLE! SO KEEP IN MIND!
