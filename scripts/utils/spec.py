@@ -35,9 +35,9 @@ def specgram(audio_path='test.wav',params=None):
         n_fft = 1024
         hop_length = 160
         center = False
-        n_mels = 128
+        n_mels = 256
     (speech,rate) = librosa.load(path=audio_path,sr=16000) #16Khz sampling rate #HACK: HARDCODED
-    gram = librosa.feature.melspectrogram(y=speech,sr=16000,n_mels=128,n_fft=1024,hop_length=160)
+    gram = librosa.feature.melspectrogram(y=speech,sr=16000,n_mels=256,n_fft=1024,hop_length=160)
     C_dash = 10000
     gram = np.log(1+C_dash*gram)
     length = gram.shape[1]
@@ -112,7 +112,7 @@ for fil in train_set:
     shutil.copy2(src=fil,dst=destn)
 #making a pickle out of all these pictures in ../datasets/train_set
 train_set = glob2.glob('../../datasets/train_set/*.png')
-train = np.zeros((1,128*100+1))
+train = np.zeros((1,256*100+1))
 p1 = re.compile("([a-z0-9A-Z]+)_([a-z0-9A-Z]+)_(?:[0-9]).png")
 for image in train_set:
     (file_name,temp) = path_info(image)
@@ -126,3 +126,4 @@ for image in train_set:
 train  = train[1:,:]
 with open('../cnn_model/train_data.pkl','wb') as f1:
     pkl.dump(train,f1)
+shutil.rmtree('../../datasets/train_set'); #clearing the residues
