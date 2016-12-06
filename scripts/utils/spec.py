@@ -13,6 +13,10 @@ import glob2
 import shutil
 import cPickle as pkl
 import re
+import progressbar
+#from joblib import Parallel,delayed
+#import multiprocessing
+
 
 def path_info(audio_path):
     (dir_name,file_name) = os.path.split(audio_path)
@@ -24,7 +28,6 @@ def im2double(im):
     return im.astype(np.float) / info.max # Divide all values by the largest possible value in the datatype
 
 def specgram(audio_path='test.wav',params=None):
-
     if params is not None:
         n_fft = params.n_fft
         hop_length = params.hop_length
@@ -35,74 +38,81 @@ def specgram(audio_path='test.wav',params=None):
         n_fft = 1024
         hop_length = 160
         center = False
-        n_mels = 256
+        n_mels = 128
     (speech,rate) = librosa.load(path=audio_path,sr=16000) #16Khz sampling rate #HACK: HARDCODED
     gram = librosa.feature.melspectrogram(y=speech,sr=16000,n_mels=256,n_fft=1024,hop_length=160)
     C_dash = 10000
     gram = np.log(1+C_dash*gram)
     length = gram.shape[1]
     no_of_frames = length/100
-    start = (length%100)/2
-    if (length%100)%2==0:
-        end = length-(length%100)/2
+    if no_of_frames!=0:
+        start = (length%100)/2
+        if (length%100)%2==0:
+            end = length-(length%100)/2
+        else :
+            end = length-(length%100)/2-1
+        gram_tf = gram[:,start:end]
+        grams = np.hsplit(indices_or_sections=no_of_frames,ary=gram_tf)
     else :
-        end = length-(length%100)/2-1
-    gram_tf = gram[:,start:end]
-    grams = np.hsplit(indices_or_sections=no_of_frames,ary=gram_tf)
+        start = 0;
+        end = length;
+        gram = gram[:,start:end]
+        return None
     for i in xrange(0,no_of_frames):
         img_file =audio_path.rstrip('.wav')+'_'+str(i)+'.png'
         scipy.misc.imsave(img_file,grams[i])
     return gram
 
+def sounds_spkr(sounds):
+    #sounds contains list of wav files for each speaker
+    #helps in parallelizing better
+    for sound in sounds:
+        specgram(sound)
+
 
 path_to_timit = "../../datasets/timit/"  #HACK:0 PATH BEWARE!! #TODO:0 FIX PATH ERRORS
-train_dialect = "train/dr1/"
-test_dialect = "test/dr1/"
-speakers = {'fcjf0': 21,
- 'fdaw0': 28,
- 'fdml0': 33,
- 'fecd0': 5,
- 'fetb0': 9,
- 'fjsp0': 36,
- 'fkfb0': 23,
- 'fmem0': 27,
- 'fsah0': 25,
- 'fsjk1': 26,
- 'fsma0': 34,
- 'ftbr0': 2,
- 'fvfb0': 14,
- 'fvmh0': 18,
- 'mcpm0': 17,
- 'mdac0': 19,
- 'mdpk0': 16,
- 'medr0': 38,
- 'mgrl0': 22,
- 'mjeb1': 29,
- 'mjwt0': 30,
- 'mkls0': 35,
- 'mklw0': 31,
- 'mmgg0': 12,
- 'mmrp0': 7,
- 'mpgh0': 3,
- 'mpgr0': 11,
- 'mpsw0': 10,
- 'mrai0': 6,
- 'mrcg0': 15,
- 'mrdd0': 20,
- 'mrso0': 1,
- 'mrws0': 8,
- 'mtjs0': 13,
- 'mtpf0': 4,
- 'mtrr0': 32,
- 'mwad0': 37,
- 'mwar0': 24}
+#train_dialect = "train/dr1/"
+dialects_train = glob.glob(path_to_timit+"train/*")
+dialects_test = glob.glob(path_to_timit+"test/*")
+dialects = dialects_train+dialects_test
+speakers_dir = glob.glob(path_to_timit+'**/**/*')
+speakers_ID = []
+n_s = 0;
+speakers = {}
+for i in range(len(speakers_dir)):
+    (bb,spk) = os.path.split(speakers_dir[i])
+    speakers_ID.append(spk)
+    speakers[spk] = n_s
+    n_s = n_s+1
 
-#Creating the datasets
-for speaker in speakers.keys():
-    speaker_path = path_to_timit+train_dialect+speaker+"/*.wav"
-    sounds = glob.glob(speaker_path)
+#BOY OH BOY 630 speakers
+total_folders = len(speakers_dir);
+bar = progressbar.ProgressBar(widgets=[
+    ' [', progressbar.Timer(), '] ',
+    progressbar.Bar(),
+    ' (', progressbar.ETA(), ') ',
+],max_value=total_folders)
+## This hack couldn't be avoided, apologies
+#Creating the dataset, takes a while ~ 1hr
+for i in xrange(len(speakers_dir)):
+    speaker_path = speakers_dir[i]
+    sounds = glob.glob(speaker_path+'/*.wav')
     for sound in sounds:
         gram = specgram(sound);
+    bar.update(i)
+bar.finish()
+
+'''
+#Parallel version of the above loop
+num_cores = multiprocessing.cpu_count()
+
+parallelizer = Parallel(n_jobs=num_cores)
+task_iterator = (delayed(sounds_spkr) (glob.glob(speaker_path+'/*.wav')) for speaker_path in speakers_dir)
+
+#^^ should give a massive performance boost.
+'''
+
+
 #datasets created
 #we will move these into a separate directory called ../datasets/train_set/speaker_name
 train_set = glob2.glob(path_to_timit+"**/*.png")

@@ -28,7 +28,7 @@ with open('train_data.pkl','rb') as f1:
 
 
 batch_size = 128
-nb_classes = 38
+nb_classes = 38 #numerically equal to len(speaker.keys())
 nb_epoch = 50
 
 # input image dimensions
@@ -85,7 +85,7 @@ optim = Nadam(lr=1e-4, beta_1=0.9, beta_2=0.999, epsilon=1e-06, schedule_decay=0
 model.compile(loss='categorical_crossentropy',optimizer=optim,metrics=['accuracy'])
 
 #Training
-model.fit(trX, trY, batch_size=64, nb_epoch=100,
+model.fit(trX, trY, batch_size=batch_size, nb_epoch=100,
           verbose=1, validation_data=(teX, teY))
 #Testing
 score = model.evaluate(X_test, Y_test, verbose=0)
