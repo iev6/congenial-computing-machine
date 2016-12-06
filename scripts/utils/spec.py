@@ -127,3 +127,4 @@ train  = train[1:,:]
 with open('../cnn_model/train_data.pkl','wb') as f1:
     pkl.dump(train,f1)
 shutil.rmtree('../../datasets/train_set'); #clearing the residues
+os.system('mkdir ../../datasets/train_set')
