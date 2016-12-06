@@ -27,7 +27,7 @@ with open('train_data.pkl','rb') as f1:
 
 
 
-batch_size = 128
+batch_size = 32
 nb_classes = 38 #numerically equal to len(speaker.keys())
 nb_epoch = 50
 
@@ -86,6 +86,6 @@ model.compile(loss='categorical_crossentropy',optimizer=optim,metrics=['accuracy
 
 #Training
 model.fit(trX, trY, batch_size=batch_size, nb_epoch=100,
-          verbose=1, validation_data=(teX, teY))
+          verbose=1, validation_data=(teX, teY),shuffle=False) ##NOTE
 #Testing
 score = model.evaluate(X_test, Y_test, verbose=0)

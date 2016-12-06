@@ -14,6 +14,7 @@ import shutil
 import cPickle as pkl
 import re
 import progressbar
+import gc
 #from joblib import Parallel,delayed
 #import multiprocessing
 
@@ -53,14 +54,13 @@ def specgram(audio_path='test.wav',params=None):
             end = length-(length%100)/2-1
         gram_tf = gram[:,start:end]
         grams = np.hsplit(indices_or_sections=no_of_frames,ary=gram_tf)
+        for i in xrange(0,no_of_frames):
+            img_file =audio_path.rstrip('.wav')+'_'+str(i)+'.png'
+            scipy.misc.imsave(img_file,grams[i])
     else :
         start = 0;
         end = length;
         gram = gram[:,start:end]
-        return None
-    for i in xrange(0,no_of_frames):
-        img_file =audio_path.rstrip('.wav')+'_'+str(i)+'.png'
-        scipy.misc.imsave(img_file,grams[i])
     return gram
 
 def sounds_spkr(sounds):
@@ -99,6 +99,8 @@ for i in xrange(len(speakers_dir)):
     sounds = glob.glob(speaker_path+'/*.wav')
     for sound in sounds:
         gram = specgram(sound);
+    if i%100==0:
+        gc.collect()
     bar.update(i)
 bar.finish()
 
@@ -124,7 +126,18 @@ for fil in train_set:
 train_set = glob2.glob('../../datasets/train_set/*.png')
 train = np.zeros((1,256*100+1))
 p1 = re.compile("([a-z0-9A-Z]+)_([a-z0-9A-Z]+)_(?:[0-9]).png")
-for image in train_set:
+bar = progressbar.ProgressBar(widgets=[
+    ' [', progressbar.Timer(), '] ',
+    progressbar.Bar(),
+    ' (', progressbar.ETA(), ') ',
+],max_value=len(train_set))
+
+for i in xrange(len(train_set)):
+    if i%2==0 :
+        continue
+    if i%100==0 :
+        gc.collect()
+    image = train_set[i]
     (file_name,temp) = path_info(image)
     m1 = p1.match(string=file_name)
     (speaker_name,temp) = m1.groups(0)
@@ -133,6 +146,7 @@ for image in train_set:
     spkr = speakers[speaker_name]
     img = np.append(img,spkr)
     train = np.vstack((train,img))
+    bar.update(i)
 train  = train[1:,:]
 with open('../cnn_model/train_data.pkl','wb') as f1:
     pkl.dump(train,f1)
