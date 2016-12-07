@@ -9,6 +9,12 @@ Authors:
 Giridhur S (@iev6)
 Ramasubramanian B (@B-Rama)
 
+Primary Reference :  
+  + End-to-end learning for music audio, Sander Dieleman, Benjamin Schrauwen, ICASSP 2014.
+
+
+
+Notes : 
 
 TIMIT dataset used is protected. { Code currently uses the TIMIT dataset }
 
